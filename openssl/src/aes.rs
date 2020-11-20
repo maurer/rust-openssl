@@ -137,6 +137,7 @@ impl AesKey {
 ///
 /// Panics if `in_` is not the same length as `out`, if that length is not a multiple of 16, or if
 /// `iv` is not at least 32 bytes.
+#[cfg(not(boringssl))]
 pub fn aes_ige(in_: &[u8], out: &mut [u8], key: &AesKey, iv: &mut [u8], mode: Mode) {
     unsafe {
         assert!(in_.len() == out.len());
@@ -244,6 +245,7 @@ mod test {
 
     // From https://www.mgp25.com/AESIGE/
     #[test]
+    #[cfg(not(boringssl))]
     fn ige_vector_1() {
         let raw_key = "000102030405060708090A0B0C0D0E0F";
         let raw_iv = "000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F";

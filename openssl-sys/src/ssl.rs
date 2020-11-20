@@ -411,15 +411,20 @@ pub const SSL_MODE_SEND_SERVERHELLO_TIME: c_long = 0x40;
 #[cfg(ossl101)]
 pub const SSL_MODE_SEND_FALLBACK_SCSV: c_long = 0x80;
 
+#[cfg(not(boringssl))]
 pub unsafe fn SSL_CTX_set_mode(ctx: *mut SSL_CTX, op: c_long) -> c_long {
     SSL_CTX_ctrl(ctx, SSL_CTRL_MODE, op, ptr::null_mut())
+}
+#[cfg(boringssl)]
+extern "C" {
+    pub fn SSL_CTX_set_mode(ctx: *mut SSL_CTX, op: c_long) -> c_long;
 }
 
 #[cfg(ossl111)]
 pub const SSL_COOKIE_LENGTH: c_int = 4096;
 
 cfg_if! {
-    if #[cfg(ossl110)] {
+    if #[cfg(any(ossl110, boringssl))] {
         extern "C" {
             pub fn SSL_CTX_get_options(ctx: *const SSL_CTX) -> c_ulong;
             pub fn SSL_CTX_set_options(ctx: *mut SSL_CTX, op: c_ulong) -> c_ulong;
@@ -450,8 +455,13 @@ cfg_if! {
     }
 }
 
+#[cfg(not(boringssl))]
 pub unsafe fn SSL_set_mtu(ssl: *mut SSL, mtu: c_long) -> c_long {
     SSL_ctrl(ssl, SSL_CTRL_SET_MTU, mtu, ptr::null_mut())
+}
+#[cfg(boringssl)]
+extern "C" {
+    pub fn SSL_set_mtu(ssl: *mut SSL, mtu: c_long) -> c_long;
 }
 
 pub type GEN_SESSION_CB =
@@ -748,39 +758,64 @@ pub const SSL_CTRL_GET_MIN_PROTO_VERSION: c_int = 130;
 #[cfg(ossl110g)]
 pub const SSL_CTRL_GET_MAX_PROTO_VERSION: c_int = 131;
 
-pub unsafe fn SSL_CTX_set_tmp_dh(ctx: *mut SSL_CTX, dh: *mut DH) -> c_long {
-    SSL_CTX_ctrl(ctx, SSL_CTRL_SET_TMP_DH, 0, dh as *mut c_void)
+cfg_if! {
+    if #[cfg(boringssl)] {
+        extern "C" {
+            pub fn SSL_CTX_set_tmp_dh(ctx: *mut SSL_CTX, dh: *mut DH) -> c_long;
+
+            pub fn SSL_CTX_set_tmp_ecdh(ctx: *mut SSL_CTX, key: *mut EC_KEY) -> c_long;
+
+            pub fn SSL_set_tmp_dh(ssl: *mut SSL, dh: *mut DH) -> c_long;
+
+            pub fn SSL_set_tmp_ecdh(ssl: *mut SSL, key: *mut EC_KEY) -> c_long;
+
+            pub fn SSL_CTX_add_extra_chain_cert(ctx: *mut SSL_CTX, x509: *mut X509) -> c_long;
+
+            pub fn SSL_CTX_get_extra_chain_certs(
+                ctx: *mut SSL_CTX,
+                chain: *mut *mut stack_st_X509,
+            ) -> c_long;
+        }
+    } else {
+        pub unsafe fn SSL_CTX_set_tmp_dh(ctx: *mut SSL_CTX, dh: *mut DH) -> c_long {
+            SSL_CTX_ctrl(ctx, SSL_CTRL_SET_TMP_DH, 0, dh as *mut c_void)
+        }
+
+        pub unsafe fn SSL_CTX_set_tmp_ecdh(ctx: *mut SSL_CTX, key: *mut EC_KEY) -> c_long {
+            SSL_CTX_ctrl(ctx, SSL_CTRL_SET_TMP_ECDH, 0, key as *mut c_void)
+        }
+
+        pub unsafe fn SSL_set_tmp_dh(ssl: *mut SSL, dh: *mut DH) -> c_long {
+            SSL_ctrl(ssl, SSL_CTRL_SET_TMP_DH, 0, dh as *mut c_void)
+        }
+
+        pub unsafe fn SSL_set_tmp_ecdh(ssl: *mut SSL, key: *mut EC_KEY) -> c_long {
+            SSL_ctrl(ssl, SSL_CTRL_SET_TMP_ECDH, 0, key as *mut c_void)
+        }
+
+        pub unsafe fn SSL_CTX_add_extra_chain_cert(ctx: *mut SSL_CTX, x509: *mut X509) -> c_long {
+            SSL_CTX_ctrl(ctx, SSL_CTRL_EXTRA_CHAIN_CERT, 0, x509 as *mut c_void)
+        }
+
+        pub unsafe fn SSL_CTX_get_extra_chain_certs(
+            ctx: *mut SSL_CTX,
+            chain: *mut *mut stack_st_X509,
+        ) -> c_long {
+            SSL_CTX_ctrl(ctx, SSL_CTRL_GET_EXTRA_CHAIN_CERTS, 0, chain as *mut c_void)
+        }
+    }
 }
 
-pub unsafe fn SSL_CTX_set_tmp_ecdh(ctx: *mut SSL_CTX, key: *mut EC_KEY) -> c_long {
-    SSL_CTX_ctrl(ctx, SSL_CTRL_SET_TMP_ECDH, 0, key as *mut c_void)
-}
-
-pub unsafe fn SSL_set_tmp_dh(ssl: *mut SSL, dh: *mut DH) -> c_long {
-    SSL_ctrl(ssl, SSL_CTRL_SET_TMP_DH, 0, dh as *mut c_void)
-}
-
-pub unsafe fn SSL_set_tmp_ecdh(ssl: *mut SSL, key: *mut EC_KEY) -> c_long {
-    SSL_ctrl(ssl, SSL_CTRL_SET_TMP_ECDH, 0, key as *mut c_void)
-}
-
-pub unsafe fn SSL_CTX_add_extra_chain_cert(ctx: *mut SSL_CTX, x509: *mut X509) -> c_long {
-    SSL_CTX_ctrl(ctx, SSL_CTRL_EXTRA_CHAIN_CERT, 0, x509 as *mut c_void)
-}
-
-pub unsafe fn SSL_CTX_get_extra_chain_certs(
-    ctx: *mut SSL_CTX,
-    chain: *mut *mut stack_st_X509,
-) -> c_long {
-    SSL_CTX_ctrl(ctx, SSL_CTRL_GET_EXTRA_CHAIN_CERTS, 0, chain as *mut c_void)
-}
-
-#[cfg(ossl102)]
+#[cfg(all(ossl102, not(boringssl)))]
 pub unsafe fn SSL_CTX_set0_verify_cert_store(ctx: *mut SSL_CTX, st: *mut X509_STORE) -> c_long {
     SSL_CTX_ctrl(ctx, SSL_CTRL_SET_VERIFY_CERT_STORE, 0, st as *mut c_void)
 }
+#[cfg(all(ossl102, boringssl))]
+extern "C" {
+    pub fn SSL_CTX_set0_verify_cert_store(ctx: *mut SSL_CTX, st: *mut X509_STORE) -> c_long;
+}
 
-#[cfg(ossl111)]
+#[cfg(all(ossl111, not(boringssl)))]
 pub unsafe fn SSL_CTX_set1_groups_list(ctx: *mut SSL_CTX, s: *const c_char) -> c_long {
     SSL_CTX_ctrl(
         ctx,
@@ -789,8 +824,12 @@ pub unsafe fn SSL_CTX_set1_groups_list(ctx: *mut SSL_CTX, s: *const c_char) -> c
         s as *const c_void as *mut c_void,
     )
 }
+#[cfg(all(ossl111, boringssl))]
+extern "C" {
+    pub fn SSL_CTX_set1_groups_list(ctx: *mut SSL_CTX, s: *const c_char) -> c_long;
+}
 
-#[cfg(ossl102)]
+#[cfg(all(ossl102, not(boringssl)))]
 pub unsafe fn SSL_CTX_set1_sigalgs_list(ctx: *mut SSL_CTX, s: *const c_char) -> c_long {
     SSL_CTX_ctrl(
         ctx,
@@ -799,8 +838,12 @@ pub unsafe fn SSL_CTX_set1_sigalgs_list(ctx: *mut SSL_CTX, s: *const c_char) -> 
         s as *const c_void as *mut c_void,
     )
 }
+#[cfg(all(ossl102, boringssl))]
+extern "C" {
+    pub fn SSL_CTX_set1_sigalgs_list(ctx: *mut SSL_CTX, s: *const c_char) -> c_long;
+}
 
-#[cfg(any(libressl, all(ossl102, not(ossl110))))]
+#[cfg(all(any(libressl, all(ossl102, not(ossl110))), not(boringssl)))]
 pub unsafe fn SSL_CTX_set_ecdh_auto(ctx: *mut SSL_CTX, onoff: c_int) -> c_int {
     SSL_CTX_ctrl(
         ctx,
@@ -809,8 +852,12 @@ pub unsafe fn SSL_CTX_set_ecdh_auto(ctx: *mut SSL_CTX, onoff: c_int) -> c_int {
         ptr::null_mut(),
     ) as c_int
 }
+#[cfg(all(any(libressl, all(ossl102, not(ossl110))), boringssl))]
+extern "C" {
+    pub fn SSL_CTX_set_ecdh_auto(ctx: *mut SSL_CTX, onoff: c_int) -> c_int;
+}
 
-#[cfg(any(libress, all(ossl102, not(ossl110))))]
+#[cfg(all(any(libress, all(ossl102, not(ossl110))), not(boringssl)))]
 pub unsafe fn SSL_set_ecdh_auto(ssl: *mut ::SSL, onoff: c_int) -> c_int {
     SSL_ctrl(
         ssl,
@@ -819,9 +866,13 @@ pub unsafe fn SSL_set_ecdh_auto(ssl: *mut ::SSL, onoff: c_int) -> c_int {
         ptr::null_mut(),
     ) as c_int
 }
+#[cfg(all(any(libress, all(ossl102, not(ossl110))), boringssl))]
+extern "C" {
+    pub fn SSL_set_ecdh_auto(ssl: *mut ::SSL, onoff: c_int) -> c_int;
+}
 
 cfg_if! {
-    if #[cfg(ossl110)] {
+    if #[cfg(all(ossl110, not(boringssl)))] {
         pub unsafe fn SSL_CTX_set_min_proto_version(ctx: *mut SSL_CTX, version: c_int) -> c_int {
             SSL_CTX_ctrl(
                 ctx,
@@ -839,7 +890,7 @@ cfg_if! {
                 ptr::null_mut(),
             ) as c_int
         }
-    } else if #[cfg(libressl261)] {
+    } else if #[cfg(any(libressl261, all(ossl110, boringssl)))] {
         extern "C" {
             pub fn SSL_CTX_set_min_proto_version(ctx: *mut ::SSL_CTX, version: u16) -> c_int;
             pub fn SSL_CTX_set_max_proto_version(ctx: *mut ::SSL_CTX, version: u16) -> c_int;
@@ -856,7 +907,7 @@ cfg_if! {
         pub unsafe fn SSL_CTX_get_max_proto_version(ctx: *mut SSL_CTX) -> c_int {
             SSL_CTX_ctrl(ctx, SSL_CTRL_GET_MAX_PROTO_VERSION, 0, ptr::null_mut()) as c_int
         }
-    } else if #[cfg(libressl270)] {
+    } else if #[cfg(any(libressl270, all(ossl110g, boringssl)))] {
         extern "C" {
             pub fn SSL_CTX_get_min_proto_version(ctx: *mut ::SSL_CTX) -> c_int;
             pub fn SSL_CTX_get_max_proto_version(ctx: *mut ::SSL_CTX) -> c_int;
@@ -864,7 +915,7 @@ cfg_if! {
     }
 }
 
-#[cfg(ossl110)]
+#[cfg(all(ossl110, not(boringssl)))]
 pub unsafe fn SSL_set_min_proto_version(s: *mut SSL, version: c_int) -> c_int {
     SSL_ctrl(
         s,
@@ -873,8 +924,12 @@ pub unsafe fn SSL_set_min_proto_version(s: *mut SSL, version: c_int) -> c_int {
         ptr::null_mut(),
     ) as c_int
 }
+#[cfg(all(ossl110, boringssl))]
+extern "C" {
+    pub fn SSL_set_min_proto_version(s: *mut SSL, version: c_int) -> c_int;
+}
 
-#[cfg(ossl110)]
+#[cfg(all(ossl110, not(boringssl)))]
 pub unsafe fn SSL_set_max_proto_version(s: *mut SSL, version: c_int) -> c_int {
     SSL_ctrl(
         s,
@@ -883,15 +938,27 @@ pub unsafe fn SSL_set_max_proto_version(s: *mut SSL, version: c_int) -> c_int {
         ptr::null_mut(),
     ) as c_int
 }
+#[cfg(all(ossl110, boringssl))]
+extern "C" {
+    pub fn SSL_set_max_proto_version(s: *mut SSL, version: c_int) -> c_int;
+}
 
-#[cfg(ossl110g)]
+#[cfg(all(ossl110g, not(boringssl)))]
 pub unsafe fn SSL_get_min_proto_version(s: *mut SSL) -> c_int {
     SSL_ctrl(s, SSL_CTRL_GET_MIN_PROTO_VERSION, 0, ptr::null_mut()) as c_int
 }
+#[cfg(all(ossl110g, boringssl))]
+extern "C" {
+    pub fn SSL_get_min_proto_version(s: *mut SSL) -> c_int;
+}
 
-#[cfg(ossl110g)]
+#[cfg(all(ossl110g, not(boringssl)))]
 pub unsafe fn SSL_get_max_proto_version(s: *mut SSL) -> c_int {
     SSL_ctrl(s, SSL_CTRL_GET_MAX_PROTO_VERSION, 0, ptr::null_mut()) as c_int
+}
+#[cfg(all(ossl110g, boringssl))]
+extern "C" {
+    pub fn SSL_get_max_proto_version(s: *mut SSL) -> c_int;
 }
 
 extern "C" {
@@ -1190,7 +1257,7 @@ extern "C" {
     pub fn SSL_set_SSL_CTX(ssl: *mut SSL, ctx: *mut SSL_CTX) -> *mut SSL_CTX;
 
     pub fn SSL_get_verify_result(ssl: *const SSL) -> c_long;
-    #[cfg(ossl110)]
+    #[cfg(all(ossl110, not(boringssl)))]
     pub fn SSL_get0_verified_chain(ssl: *const SSL) -> *mut stack_st_X509;
 
     #[cfg(ossl110)]
@@ -1262,20 +1329,35 @@ extern "C" {
     pub fn SSL_get_ex_data_X509_STORE_CTX_idx() -> c_int;
 }
 
-pub unsafe fn SSL_CTX_sess_set_cache_size(ctx: *mut SSL_CTX, t: c_long) -> c_long {
-    SSL_CTX_ctrl(ctx, SSL_CTRL_SET_SESS_CACHE_SIZE, t, ptr::null_mut())
-}
 
-pub unsafe fn SSL_CTX_sess_get_cache_size(ctx: *mut SSL_CTX) -> c_long {
-    SSL_CTX_ctrl(ctx, SSL_CTRL_GET_SESS_CACHE_SIZE, 0, ptr::null_mut())
-}
+cfg_if! {
+    if #[cfg(boringssl)] {
+        extern "C" {
+            pub fn SSL_CTX_sess_set_cache_size(ctx: *mut SSL_CTX, t: c_long) -> c_long;
 
-pub unsafe fn SSL_CTX_set_session_cache_mode(ctx: *mut SSL_CTX, m: c_long) -> c_long {
-    SSL_CTX_ctrl(ctx, SSL_CTRL_SET_SESS_CACHE_MODE, m, ptr::null_mut())
-}
+            pub fn SSL_CTX_sess_get_cache_size(ctx: *mut SSL_CTX) -> c_long;
 
-pub unsafe fn SSL_CTX_set_read_ahead(ctx: *mut SSL_CTX, m: c_long) -> c_long {
-    SSL_CTX_ctrl(ctx, SSL_CTRL_SET_READ_AHEAD, m, ptr::null_mut())
+            pub fn SSL_CTX_set_session_cache_mode(ctx: *mut SSL_CTX, m: c_long) -> c_long;
+
+            pub fn SSL_CTX_set_read_ahead(ctx: *mut SSL_CTX, m: c_long) -> c_long;
+        }
+    } else {
+        pub unsafe fn SSL_CTX_sess_set_cache_size(ctx: *mut SSL_CTX, t: c_long) -> c_long {
+            SSL_CTX_ctrl(ctx, SSL_CTRL_SET_SESS_CACHE_SIZE, t, ptr::null_mut())
+        }
+
+        pub unsafe fn SSL_CTX_sess_get_cache_size(ctx: *mut SSL_CTX) -> c_long {
+            SSL_CTX_ctrl(ctx, SSL_CTRL_GET_SESS_CACHE_SIZE, 0, ptr::null_mut())
+        }
+
+        pub unsafe fn SSL_CTX_set_session_cache_mode(ctx: *mut SSL_CTX, m: c_long) -> c_long {
+            SSL_CTX_ctrl(ctx, SSL_CTRL_SET_SESS_CACHE_MODE, m, ptr::null_mut())
+        }
+
+        pub unsafe fn SSL_CTX_set_read_ahead(ctx: *mut SSL_CTX, m: c_long) -> c_long {
+            SSL_CTX_ctrl(ctx, SSL_CTRL_SET_READ_AHEAD, m, ptr::null_mut())
+        }
+    }
 }
 
 extern "C" {

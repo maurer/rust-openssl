@@ -1,7 +1,7 @@
 use libc::*;
 
 cfg_if! {
-    if #[cfg(ossl110)] {
+    if #[cfg(all(ossl110, not(boringssl)))] {
         pub enum OPENSSL_STACK {}
     } else {
         #[repr(C)]
@@ -16,7 +16,7 @@ cfg_if! {
 }
 
 cfg_if! {
-    if #[cfg(ossl110)] {
+    if #[cfg(all(ossl110, not(boringssl)))] {
         extern "C" {
             pub fn OPENSSL_sk_num(stack: *const OPENSSL_STACK) -> c_int;
             pub fn OPENSSL_sk_value(stack: *const OPENSSL_STACK, idx: c_int) -> *mut c_void;

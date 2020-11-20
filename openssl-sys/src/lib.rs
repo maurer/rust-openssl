@@ -31,6 +31,8 @@ pub use evp::*;
 pub use hmac::*;
 pub use obj_mac::*;
 pub use object::*;
+// TODO: Instead of this, re-implement the API.
+#[cfg(not(boringssl))]
 pub use ocsp::*;
 pub use ossl_typ::*;
 pub use pem::*;

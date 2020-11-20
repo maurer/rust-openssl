@@ -134,7 +134,11 @@ extern "C" {
 }
 
 cfg_if! {
-    if #[cfg(ossl110)] {
+    if #[cfg(all(ossl110, boringssl))] {
+        extern "C" {
+            pub fn BN_get_rfc3526_prime_1536(bn: *mut BIGNUM) -> *mut BIGNUM;
+        }
+    } else if #[cfg(ossl110)] {
         extern "C" {
             pub fn BN_get_rfc2409_prime_768(bn: *mut BIGNUM) -> *mut BIGNUM;
             pub fn BN_get_rfc2409_prime_1024(bn: *mut BIGNUM) -> *mut BIGNUM;
@@ -144,6 +148,10 @@ cfg_if! {
             pub fn BN_get_rfc3526_prime_4096(bn: *mut BIGNUM) -> *mut BIGNUM;
             pub fn BN_get_rfc3526_prime_6144(bn: *mut BIGNUM) -> *mut BIGNUM;
             pub fn BN_get_rfc3526_prime_8192(bn: *mut BIGNUM) -> *mut BIGNUM;
+        }
+    } else if #[cfg(boringssl)] {
+        extern "C" {
+            pub fn get_rfc3526_prime_1536(bn: *mut BIGNUM) -> *mut BIGNUM;
         }
     } else {
         extern "C" {

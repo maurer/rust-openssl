@@ -13,7 +13,7 @@ use error::ErrorStack;
 use {cvt, cvt_p};
 
 cfg_if! {
-    if #[cfg(ossl110)] {
+    if #[cfg(all(ossl110, not(boringssl)))] {
         use ffi::{
             OPENSSL_sk_pop, OPENSSL_sk_free, OPENSSL_sk_num, OPENSSL_sk_value, OPENSSL_STACK,
             OPENSSL_sk_new_null, OPENSSL_sk_push,

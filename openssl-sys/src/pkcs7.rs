@@ -40,6 +40,7 @@ extern "C" {
         flags: c_int,
     ) -> *mut PKCS7;
 
+    #[cfg(not(boringssl))]
     pub fn PKCS7_verify(
         pkcs7: *mut PKCS7,
         certs: *mut stack_st_X509,
@@ -67,6 +68,7 @@ extern "C" {
 
     pub fn PKCS7_free(pkcs7: *mut PKCS7);
 
+    #[cfg(not(boringssl))]
     pub fn SMIME_write_PKCS7(
         out: *mut BIO,
         pkcs7: *mut PKCS7,
@@ -74,5 +76,6 @@ extern "C" {
         flags: c_int,
     ) -> c_int;
 
+    #[cfg(not(boringssl))]
     pub fn SMIME_read_PKCS7(bio: *mut BIO, bcont: *mut *mut BIO) -> *mut PKCS7;
 }

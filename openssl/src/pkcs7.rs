@@ -80,6 +80,7 @@ impl Pkcs7 {
     /// This corresponds to [`SMIME_read_PKCS7`].
     ///
     /// [`SMIME_read_PKCS7`]: https://www.openssl.org/docs/man1.1.0/crypto/SMIME_read_PKCS7.html
+    #[cfg(not(boringssl))]
     pub fn from_smime(input: &[u8]) -> Result<(Pkcs7, Option<Vec<u8>>), ErrorStack> {
         ffi::init();
 
@@ -107,6 +108,7 @@ impl Pkcs7 {
     /// This corresponds to [`PKCS7_encrypt`].
     ///
     /// [`PKCS7_encrypt`]: https://www.openssl.org/docs/man1.0.2/crypto/PKCS7_encrypt.html
+    #[cfg(not(boringssl))]
     pub fn encrypt(
         certs: &StackRef<X509>,
         input: &[u8],
@@ -166,6 +168,7 @@ impl Pkcs7Ref {
     /// This corresponds to [`SMIME_write_PKCS7`].
     ///
     /// [`SMIME_write_PKCS7`]: https://www.openssl.org/docs/man1.1.0/crypto/SMIME_write_PKCS7.html
+    #[cfg(not(boringssl))]
     pub fn to_smime(&self, input: &[u8], flags: Pkcs7Flags) -> Result<Vec<u8>, ErrorStack> {
         let input_bio = MemBioSlice::new(input)?;
         let output = MemBio::new()?;
@@ -245,6 +248,7 @@ impl Pkcs7Ref {
     /// This corresponds to [`PKCS7_verify`].
     ///
     /// [`PKCS7_verify`]: https://www.openssl.org/docs/man1.0.2/crypto/PKCS7_verify.html
+    #[cfg(not(boringssl))]
     pub fn verify(
         &self,
         certs: &StackRef<X509>,
@@ -292,6 +296,7 @@ mod tests {
     use x509::X509;
 
     #[test]
+    #[cfg(not(boringssl))]
     fn encrypt_decrypt_test() {
         let cert = include_bytes!("../test/certs.pem");
         let cert = X509::from_pem(cert).unwrap();
@@ -320,6 +325,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(not(boringssl))]
     fn sign_verify_test_detached() {
         let cert = include_bytes!("../test/cert.pem");
         let cert = X509::from_pem(cert).unwrap();
@@ -362,6 +368,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(not(boringssl))]
     fn sign_verify_test_normal() {
         let cert = include_bytes!("../test/cert.pem");
         let cert = X509::from_pem(cert).unwrap();
@@ -398,6 +405,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(not(boringssl))]
     fn invalid_from_smime() {
         let input = String::from("Invalid SMIME Message");
         let result = Pkcs7::from_smime(input.as_bytes());

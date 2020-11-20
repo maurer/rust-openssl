@@ -8,6 +8,7 @@ pub struct ConfMethod(*mut ffi::CONF_METHOD);
 
 impl ConfMethod {
     /// Retrieve handle to the default OpenSSL configuration file processing function.
+    #[cfg(not(boringssl))]
     pub fn default() -> ConfMethod {
         unsafe {
             ffi::init();

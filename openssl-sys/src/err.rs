@@ -33,6 +33,7 @@ pub struct ERR_STRING_DATA {
 
 extern "C" {
     pub fn ERR_put_error(lib: c_int, func: c_int, reason: c_int, file: *const c_char, line: c_int);
+    #[cfg(not(boringssl))]
     pub fn ERR_set_error_data(data: *mut c_char, flags: c_int);
 
     pub fn ERR_get_error() -> c_ulong;
@@ -55,4 +56,9 @@ extern "C" {
     pub fn ERR_load_crypto_strings();
 
     pub fn ERR_get_next_error_library() -> c_int;
+}
+
+#[cfg(boringssl)]
+pub fn ERR_set_error_data(_data: *mut c_char, _flags: c_int) {
+    panic!("Unimplemented function ERR_set_error_data");
 }

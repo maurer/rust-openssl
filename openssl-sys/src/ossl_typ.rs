@@ -331,7 +331,7 @@ cfg_if! {
     }
 }
 cfg_if! {
-    if #[cfg(ossl110)] {
+    if #[cfg(all(ossl110, not(boringssl)))] {
         pub enum X509_ALGOR {}
     } else {
         #[repr(C)]

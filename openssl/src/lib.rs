@@ -159,6 +159,7 @@ pub mod fips;
 pub mod hash;
 pub mod memcmp;
 pub mod nid;
+#[cfg(not(boringssl))]
 pub mod ocsp;
 pub mod pkcs12;
 pub mod pkcs5;

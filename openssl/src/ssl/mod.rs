@@ -2676,7 +2676,7 @@ impl SslRef {
     /// [`verify_result`]: #method.verify_result
     /// [`X509VerifyResult::OK`]: ../x509/struct.X509VerifyResult.html#associatedconstant.OK
     /// [`SSL_get0_verified_chain`]: https://www.openssl.org/docs/man1.1.0/ssl/SSL_get0_verified_chain.html
-    #[cfg(ossl110)]
+    #[cfg(all(ossl110, not(boringssl)))]
     pub fn verified_chain(&self) -> Option<&StackRef<X509>> {
         unsafe {
             let ptr = ffi::SSL_get0_verified_chain(self.as_ptr());

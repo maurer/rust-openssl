@@ -79,7 +79,7 @@ impl Dh<Params> {
     }
 
     /// Requires OpenSSL 1.0.2 or newer.
-    #[cfg(any(ossl102, ossl110))]
+    #[cfg(all(any(ossl102, ossl110), not(boringssl)))]
     pub fn get_1024_160() -> Result<Dh<Params>, ErrorStack> {
         unsafe {
             ffi::init();
@@ -88,7 +88,7 @@ impl Dh<Params> {
     }
 
     /// Requires OpenSSL 1.0.2 or newer.
-    #[cfg(any(ossl102, ossl110))]
+    #[cfg(all(any(ossl102, ossl110), not(boringssl)))]
     pub fn get_2048_224() -> Result<Dh<Params>, ErrorStack> {
         unsafe {
             ffi::init();
@@ -97,7 +97,7 @@ impl Dh<Params> {
     }
 
     /// Requires OpenSSL 1.0.2 or newer.
-    #[cfg(any(ossl102, ossl110))]
+    #[cfg(all(any(ossl102, ossl110), not(boringssl)))]
     pub fn get_2048_256() -> Result<Dh<Params>, ErrorStack> {
         unsafe {
             ffi::init();

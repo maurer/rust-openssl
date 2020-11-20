@@ -23,7 +23,7 @@ stack!(stack_st_X509_EXTENSION);
 stack!(stack_st_X509_ATTRIBUTE);
 
 cfg_if! {
-    if #[cfg(ossl110)] {
+    if #[cfg(all(ossl110, not(boringssl)))] {
         pub enum X509_REQ_INFO {}
     } else {
         #[repr(C)]
@@ -101,7 +101,7 @@ cfg_if! {
 stack!(stack_st_X509_REVOKED);
 
 cfg_if! {
-    if #[cfg(ossl110)] {
+    if #[cfg(all(ossl110, not(boringssl)))] {
         pub enum X509_REQ {}
     } else {
         #[repr(C)]
@@ -308,7 +308,7 @@ const_ptr_api! {
     }
 }
 cfg_if! {
-    if #[cfg(ossl110)] {
+    if #[cfg(all(ossl110, not(boringssl)))] {
         extern "C" {
             pub fn X509_set1_notBefore(x: *mut ::X509, tm: *const ::ASN1_TIME) -> c_int;
             pub fn X509_set1_notAfter(x: *mut ::X509, tm: *const ::ASN1_TIME) -> c_int;

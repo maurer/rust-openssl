@@ -400,6 +400,7 @@ impl PKey<Private> {
     /// # Note
     ///
     /// To compute HMAC values, use the `sign` module.
+    #[cfg(not(boringssl))]
     pub fn hmac(key: &[u8]) -> Result<PKey<Private>, ErrorStack> {
         unsafe {
             assert!(key.len() <= c_int::max_value() as usize);
@@ -780,6 +781,8 @@ mod tests {
     }
 
     #[test]
+    // On Boringssl, this test compiles but fails at runtime with UNSUPPORTED_ALGORITHM.
+    #[cfg(not(boringssl))]
     fn test_dh_accessor() {
         let dh = include_bytes!("../test/dhparams.pem");
         let dh = Dh::params_from_pem(dh).unwrap();

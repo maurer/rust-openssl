@@ -206,6 +206,7 @@ impl X509StoreContextRef {
     /// This corresponds to [`X509_STORE_CTX_get0_chain`].
     ///
     /// [`X509_STORE_CTX_get0_chain`]: https://www.openssl.org/docs/man1.1.0/crypto/X509_STORE_CTX_get0_chain.html
+    #[cfg(not(boringssl))]
     pub fn chain(&self) -> Option<&StackRef<X509>> {
         unsafe {
             let chain = X509_STORE_CTX_get0_chain(self.as_ptr());
@@ -1458,15 +1459,22 @@ cfg_if! {
 }
 
 cfg_if! {
-    if #[cfg(ossl110)] {
+    if #[cfg(all(ossl110, not(boringssl)))] {
         use ffi::{
             X509_ALGOR_get0, ASN1_STRING_get0_data, X509_STORE_CTX_get0_chain, X509_set1_notAfter,
             X509_set1_notBefore, X509_REQ_get_version, X509_REQ_get_subject_name,
         };
     } else {
+        #[cfg(not(boringssl))]
         use ffi::{
             ASN1_STRING_data as ASN1_STRING_get0_data,
             X509_STORE_CTX_get_chain as X509_STORE_CTX_get0_chain,
+            X509_set_notAfter as X509_set1_notAfter,
+            X509_set_notBefore as X509_set1_notBefore,
+        };
+        #[cfg(boringssl)]
+        use ffi::{
+            ASN1_STRING_get0_data,
             X509_set_notAfter as X509_set1_notAfter,
             X509_set_notBefore as X509_set1_notBefore,
         };

@@ -138,6 +138,7 @@ impl Seal {
     /// # Panics
     ///
     /// Panics if `output` is less than the cipher's block size.
+    #[cfg(not(boringssl))]
     pub fn finalize(&mut self, output: &mut [u8]) -> Result<usize, ErrorStack> {
         unsafe {
             assert!(output.len() >= self.block_size);
@@ -236,6 +237,7 @@ impl Open {
     /// # Panics
     ///
     /// Panics if `output` is less than the cipher's block size.
+    #[cfg(not(boringssl))]
     pub fn finalize(&mut self, output: &mut [u8]) -> Result<usize, ErrorStack> {
         unsafe {
             assert!(output.len() >= self.block_size);
@@ -263,6 +265,7 @@ mod test {
     use symm::Cipher;
 
     #[test]
+    #[cfg(not(boringssl))]
     fn public_encrypt_private_decrypt() {
         let private_pem = include_bytes!("../test/rsa.pem");
         let public_pem = include_bytes!("../test/rsa.pem.pub");

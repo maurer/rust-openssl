@@ -107,10 +107,41 @@ extern "C" {
 }
 
 cfg_if! {
-    if #[cfg(ossl110)] {
+    if #[cfg(all(ossl110, not(boringssl)))] {
         extern "C" {
             pub fn CRYPTO_malloc(num: size_t, file: *const c_char, line: c_int) -> *mut c_void;
             pub fn CRYPTO_free(buf: *mut c_void, file: *const c_char, line: c_int);
+        }
+    } else if #[cfg(all(ossl110, boringssl))] {
+        // TODO: Also handle boringssl in the above case.
+        extern "C" {
+            pub fn OPENSSL_malloc(num: size_t) -> *mut c_void;
+            pub fn OPENSSL_free(buf: *mut c_void);
+        }
+        pub fn CRYPTO_malloc(num: size_t, _file: *const c_char, _line: c_int) -> *mut c_void {
+            unsafe {
+                OPENSSL_malloc(num)
+            }
+        }
+        pub fn CRYPTO_free(buf: *mut c_void, _file: *const c_char, _line: c_int) {
+            unsafe {
+                OPENSSL_free(buf)
+            }
+        }
+    } else if #[cfg(boringssl)] {
+        extern "C" {
+            pub fn OPENSSL_malloc(num: c_int) -> *mut c_void;
+            pub fn OPENSSL_free(buf: *mut c_void);
+        }
+        pub fn CRYPTO_malloc(num: c_int, file: *const c_char, line: c_int) -> *mut c_void {
+            unsafe {
+                OPENSSL_malloc(num)
+            }
+        }
+        pub fn CRYPTO_free(buf: *mut c_void) {
+            unsafe {
+                OPENSSL_free(buf)
+            }
         }
     } else {
         extern "C" {

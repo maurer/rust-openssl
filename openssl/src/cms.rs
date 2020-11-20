@@ -95,6 +95,7 @@ impl CmsContentInfoRef {
         }
     }
 
+    #[cfg(not(boringssl))]
     to_der! {
         /// Serializes this CmsContentInfo using DER.
         ///
@@ -105,6 +106,7 @@ impl CmsContentInfoRef {
         ffi::i2d_CMS_ContentInfo
     }
 
+    #[cfg(not(boringssl))]
     to_pem! {
         /// Serializes this CmsContentInfo using DER.
         ///
@@ -122,6 +124,7 @@ impl CmsContentInfo {
     /// OpenSSL documentation at [`SMIME_read_CMS`]
     ///
     /// [`SMIME_read_CMS`]: https://www.openssl.org/docs/man1.0.2/crypto/SMIME_read_CMS.html
+    #[cfg(not(boringssl))]
     pub fn smime_read_cms(smime: &[u8]) -> Result<CmsContentInfo, ErrorStack> {
         unsafe {
             let bio = MemBioSlice::new(smime)?;
@@ -132,6 +135,7 @@ impl CmsContentInfo {
         }
     }
 
+    #[cfg(not(boringssl))]
     from_der! {
         /// Deserializes a DER-encoded ContentInfo structure.
         ///
@@ -143,6 +147,7 @@ impl CmsContentInfo {
         ffi::d2i_CMS_ContentInfo
     }
 
+    #[cfg(not(boringssl))]
     from_pem! {
         /// Deserializes a PEM-encoded ContentInfo structure.
         ///
@@ -200,6 +205,7 @@ impl CmsContentInfo {
     /// OpenSSL documentation at [`CMS_encrypt`]
     ///
     /// [`CMS_encrypt`]: https://www.openssl.org/docs/manmaster/man3/CMS_encrypt.html
+    #[cfg(not(boringssl))]
     pub fn encrypt(
         certs: &StackRef<X509>,
         data: &[u8],
@@ -229,6 +235,7 @@ mod test {
     use x509::X509;
 
     #[test]
+    #[cfg(not(boringssl))]
     fn cms_encrypt_decrypt() {
         // load cert with public key only
         let pub_cert_bytes = include_bytes!("../test/cms_pubkey.der");
